@@ -12,6 +12,7 @@ defmodule SecurityTxt do
   alias SecurityTxt.Lines
   alias SecurityTxt.OpenPgp
   alias SecurityTxt.Parser
+  alias SecurityTxt.Serializer
   alias SecurityTxt.Validator
 
   @typedoc "A parsed RFC 9116 field."
@@ -46,6 +47,11 @@ defmodule SecurityTxt do
           required(:policy) => [String.t()],
           required(:preferred_languages) => [String.t()]
         }
+
+  @spec serialize(keyword()) :: String.t()
+  def serialize(options) when is_list(options) do
+    Serializer.serialize(options)
+  end
 
   @spec parse(String.t()) :: result()
   def parse(content) when is_binary(content) do
