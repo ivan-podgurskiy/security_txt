@@ -28,6 +28,15 @@ defmodule SecurityTxt do
           required(:recommendations) => [diagnostic()],
           required(:notifications) => [diagnostic()],
           required(:fields) => [field()],
-          required(:signed) => boolean()
+          required(:signed) => boolean(),
+          required(:contact) => [String.t()],
+          required(:expires) => String.t() | nil,
+          required(:acknowledgments) => [String.t()],
+          required(:canonical) => [String.t()],
+          required(:csaf) => [String.t()],
+          required(:encryption) => [String.t()],
+          required(:hiring) => [String.t()],
+          required(:policy) => [String.t()],
+          required(:preferred_languages) => [String.t()]
         }
 end
