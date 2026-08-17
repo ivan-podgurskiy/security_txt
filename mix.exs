@@ -29,7 +29,7 @@ defmodule SecurityTxt.MixProject do
     [
       {:stream_data, "~> 1.1", only: [:dev, :test]},
       {:jason, "~> 1.4", only: [:dev, :test], runtime: false},
-      {:ex_doc, "~> 0.34", only: :dev, runtime: false},
+      {:ex_doc, "~> 0.37.0", only: :dev, runtime: false},
       {:credo, "~> 1.7", only: :dev, runtime: false},
       {:dialyxir, "~> 1.4", only: [:dev, :test], runtime: false}
     ]
