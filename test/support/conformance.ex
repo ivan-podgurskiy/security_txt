@@ -163,6 +163,7 @@ defmodule Conformance do
           {:ok, datetime, _} -> datetime
           {:ok, datetime} -> datetime
         end
+
       phase =
         cond do
           DateTime.compare(now, expiry) == :gt ->
@@ -203,8 +204,7 @@ defmodule Conformance do
   defp build_symbols(captured_now) do
     %{
       "{{past}}" => iso_timestamp(DateTime.add(captured_now, -86_400, :second)),
-      "{{within_one_year}}" =>
-        iso_timestamp(DateTime.add(captured_now, 30 * 86_400, :second)),
+      "{{within_one_year}}" => iso_timestamp(DateTime.add(captured_now, 30 * 86_400, :second)),
       "{{beyond_one_year}}" => beyond_one_year_iso(captured_now),
       "{{beyond_one_year_lower_z}}" =>
         String.replace_suffix(beyond_one_year_iso(captured_now), "Z", "z")
@@ -269,12 +269,11 @@ defmodule Conformance do
 
   defp materialize_text(%{"parts" => parts}) do
     parts
-    |> Enum.map(fn
+    |> Enum.map_join("", fn
       %{"text" => text} -> materialize(text)
       %{"repeat" => repeat, "count" => count} -> String.duplicate(materialize(repeat), count)
       _ -> raise "Invalid conformance text part"
     end)
-    |> Enum.join("")
   end
 
   defp serialize_options(options) when is_map(options) do

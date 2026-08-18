@@ -16,7 +16,7 @@ defmodule SecurityTxt.ValidatorTest do
       field("Expires", "2027-02-29T00:00:00Z", 4)
     ]
 
-  result = Validator.validate(fields, false, DateTime.utc_now())
+    result = Validator.validate(fields, false, DateTime.utc_now())
 
     assert Enum.map(result.errors, & &1.code) == [
              "invalid_lang",
@@ -51,6 +51,7 @@ defmodule SecurityTxt.ValidatorTest do
     result = Validator.validate(fields, false, DateTime.utc_now())
 
     assert result.preferred_languages == ["en", "fr-CA"]
+
     assert Enum.map(result.errors, &Map.take(&1, [:code, :line])) == [
              %{code: "invalid_lang", line: 3},
              %{code: "multi_lang", line: 4}

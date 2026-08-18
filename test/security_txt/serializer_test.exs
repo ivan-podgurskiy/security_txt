@@ -168,20 +168,24 @@ defmodule SecurityTxt.SerializerTest do
 
     test "rejects invalid DateTime expiry" do
       assert_raise ArgumentError, fn ->
-        SecurityTxt.serialize(required(expires: %DateTime{
-          calendar: Calendar.ISO,
-          day: 1,
-          hour: 0,
-          microsecond: {0, 0},
-          minute: 0,
-          month: 1,
-          second: 0,
-          std_offset: 0,
-          time_zone: "Etc/UTC",
-          utc_offset: 0,
-          year: 0,
-          zone_abbr: "UTC"
-        }))
+        SecurityTxt.serialize(
+          required(
+            expires: %DateTime{
+              calendar: Calendar.ISO,
+              day: 1,
+              hour: 0,
+              microsecond: {0, 0},
+              minute: 0,
+              month: 1,
+              second: 0,
+              std_offset: 0,
+              time_zone: "Etc/UTC",
+              utc_offset: 0,
+              year: 0,
+              zone_abbr: "UTC"
+            }
+          )
+        )
       end
     end
 
@@ -205,9 +209,29 @@ defmodule SecurityTxt.SerializerTest do
       end
     end
 
+    test "rejects non-keyword list options at the serializer layer" do
+      assert_raise ArgumentError, ~r/options must be a keyword list/, fn ->
+        SecurityTxt.Serializer.serialize(%{})
+      end
+    end
+
+    test "rejects non-string comment entries" do
+      assert_raise ArgumentError, ~r/comments must contain only strings/, fn ->
+        SecurityTxt.Serializer.serialize(required(comments: [1]))
+      end
+    end
+
+    test "rejects non-string optional field value types" do
+      assert_raise ArgumentError, ~r/Policy must be a string or non-empty array/, fn ->
+        SecurityTxt.Serializer.serialize(required(policy: 42))
+      end
+    end
+
     test "rejects output that exceeds parser resource limits" do
       assert_raise ArgumentError, fn ->
-        SecurityTxt.serialize(required(policy: "https://example.com/#{String.duplicate("x", 2_100)}"))
+        SecurityTxt.serialize(
+          required(policy: "https://example.com/#{String.duplicate("x", 2_100)}")
+        )
       end
 
       assert_raise ArgumentError, fn ->
@@ -240,10 +264,12 @@ defmodule SecurityTxt.SerializerTest do
 
       assert result.valid
       assert result.errors == []
+
       assert result.contact == [
                "mailto:security@example.com",
                "https://example.com/report"
              ]
+
       assert result.preferred_languages == ["en", "i-klingon", "x-acme"]
     end
   end

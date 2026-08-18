@@ -13,18 +13,18 @@ defmodule SecurityTxt.Expires do
             _ -> {nil, nil, nil}
           end
 
-        parse_components(
-          year_s,
-          month_s,
-          day_s,
-          hour_s,
-          minute_s,
-          second_s,
-          fraction,
-          offset_sign,
-          offset_hour_s,
-          offset_minute_s
-        )
+        parse_components(%{
+          year_s: year_s,
+          month_s: month_s,
+          day_s: day_s,
+          hour_s: hour_s,
+          minute_s: minute_s,
+          second_s: second_s,
+          fraction: fraction,
+          offset_sign: offset_sign,
+          offset_hour_s: offset_hour_s,
+          offset_minute_s: offset_minute_s
+        })
 
       _ ->
         :error
@@ -46,30 +46,22 @@ defmodule SecurityTxt.Expires do
     end
   end
 
-  defp parse_components(
-         year_s,
-         month_s,
-         day_s,
-         hour_s,
-         minute_s,
-         second_s,
-         fraction,
-         offset_sign,
-         offset_hour_s,
-         offset_minute_s
-       ) do
-    with {year, ""} <- Integer.parse(year_s),
-         {month, ""} <- Integer.parse(month_s),
-         {day, ""} <- Integer.parse(day_s),
-         {hour, ""} <- Integer.parse(hour_s),
-         {minute, ""} <- Integer.parse(minute_s),
-         {second, ""} <- Integer.parse(second_s),
-         offset_hour when is_integer(offset_hour) <- parse_offset_hour(offset_hour_s),
-         offset_minute when is_integer(offset_minute) <- parse_offset_minute(offset_minute_s),
-         true <- valid_ranges?(year, month, day, hour, minute, second, offset_hour, offset_minute) do
+  defp parse_components(components) do
+    with {year, ""} <- Integer.parse(components.year_s),
+         {month, ""} <- Integer.parse(components.month_s),
+         {day, ""} <- Integer.parse(components.day_s),
+         {hour, ""} <- Integer.parse(components.hour_s),
+         {minute, ""} <- Integer.parse(components.minute_s),
+         {second, ""} <- Integer.parse(components.second_s),
+         offset_hour when is_integer(offset_hour) <-
+           parse_offset_hour(components.offset_hour_s),
+         offset_minute when is_integer(offset_minute) <-
+           parse_offset_minute(components.offset_minute_s),
+         true <-
+           valid_ranges?(year, month, day, hour, minute, second, offset_hour, offset_minute) do
       leap_second? = second == 60
       constructed_second = if leap_second?, do: 59, else: second
-      microsecond = parse_microsecond(fraction)
+      microsecond = parse_microsecond(components.fraction)
 
       with true <-
              valid_local_components?(
@@ -82,41 +74,34 @@ defmodule SecurityTxt.Expires do
                microsecond
              ),
            normalized <-
-             build_normalized_iso8601(
-               year,
-               month,
-               day,
-               hour,
-               minute,
-               constructed_second,
-               fraction,
-               offset_sign,
-               offset_hour_s,
-               offset_minute_s
-             ),
+             build_normalized_iso8601(%{
+               year: year,
+               month: month,
+               day: day,
+               hour: hour,
+               minute: minute,
+               second: constructed_second,
+               fraction: components.fraction,
+               offset_sign: components.offset_sign,
+               offset_hour_s: components.offset_hour_s,
+               offset_minute_s: components.offset_minute_s
+             }),
            {:ok, datetime, _} <- DateTime.from_iso8601(normalized),
-           true <- calendar_components_round_trip?(
-             datetime,
-             year,
-             month,
-             day,
-             hour,
-             minute,
-             constructed_second,
-             microsecond,
-             offset_sign,
-             offset_hour,
-             offset_minute
-           ) do
-        if leap_second? do
-          if possible_positive_leap_second?(datetime) do
-            {:ok, DateTime.add(datetime, 1, :second)}
-          else
-            :error
-          end
-        else
-          {:ok, datetime}
-        end
+           true <-
+             calendar_components_round_trip?(%{
+               datetime: datetime,
+               year: year,
+               month: month,
+               day: day,
+               hour: hour,
+               minute: minute,
+               second: constructed_second,
+               microsecond: microsecond,
+               offset_sign: components.offset_sign,
+               offset_hour: offset_hour,
+               offset_minute: offset_minute
+             }) do
+        finalize_datetime(datetime, leap_second?)
       else
         _ -> :error
       end
@@ -125,20 +110,28 @@ defmodule SecurityTxt.Expires do
     end
   end
 
-  defp parse_offset_hour(nil), do: 0
-  defp parse_offset_hour(value) do
-    case Integer.parse(value) do
-      {hour, ""} -> hour
-      _ -> :error
+  defp finalize_datetime(datetime, true) do
+    if possible_positive_leap_second?(datetime) do
+      {:ok, DateTime.add(datetime, 1, :second)}
+    else
+      :error
     end
   end
 
+  defp finalize_datetime(datetime, false), do: {:ok, datetime}
+
+  defp parse_offset_hour(nil), do: 0
+
+  defp parse_offset_hour(value) do
+    {hour, ""} = Integer.parse(value)
+    hour
+  end
+
   defp parse_offset_minute(nil), do: 0
+
   defp parse_offset_minute(value) do
-    case Integer.parse(value) do
-      {minute, ""} -> minute
-      _ -> :error
-    end
+    {minute, ""} = Integer.parse(value)
+    minute
   end
 
   defp parse_microsecond(fraction) do
@@ -167,82 +160,61 @@ defmodule SecurityTxt.Expires do
   end
 
   defp valid_local_components?(year, month, day, hour, minute, second, microsecond) do
-    case NaiveDateTime.new(year, month, day, hour, minute, second, microsecond) do
-      {:ok, naive} ->
-        naive.year == year and
-          naive.month == month and
-          naive.day == day and
-          naive.hour == hour and
-          naive.minute == minute and
-          naive.second == second and
-          naive.microsecond == microsecond
+    {:ok, naive} = NaiveDateTime.new(year, month, day, hour, minute, second, microsecond)
 
-      {:error, _} ->
-        false
-    end
+    naive.year == year and
+      naive.month == month and
+      naive.day == day and
+      naive.hour == hour and
+      naive.minute == minute and
+      naive.second == second and
+      naive.microsecond == microsecond
   end
 
-  defp build_normalized_iso8601(
-         year,
-         month,
-         day,
-         hour,
-         minute,
-         second,
-         fraction,
-         offset_sign,
-         offset_hour_s,
-         offset_minute_s
-       ) do
+  defp build_normalized_iso8601(components) do
     fraction_part =
-      case fraction do
+      case components.fraction do
         "" -> ""
-        _ -> "." <> String.slice(fraction <> "000000", 0, 6)
+        _ -> "." <> String.slice(components.fraction <> "000000", 0, 6)
       end
 
     timezone_part =
-      case offset_sign do
+      case components.offset_sign do
         nil ->
           "Z"
 
         sign ->
-          sign <> offset_hour_s <> ":" <> offset_minute_s
+          sign <> components.offset_hour_s <> ":" <> components.offset_minute_s
       end
 
-    "#{pad4(year)}-#{pad2(month)}-#{pad2(day)}T#{pad2(hour)}:#{pad2(minute)}:#{pad2(second)}#{fraction_part}#{timezone_part}"
+    "#{pad4(components.year)}-#{pad2(components.month)}-#{pad2(components.day)}T" <>
+      "#{pad2(components.hour)}:#{pad2(components.minute)}:#{pad2(components.second)}" <>
+      "#{fraction_part}#{timezone_part}"
   end
 
-  defp calendar_components_round_trip?(
-         datetime,
-         year,
-         month,
-         day,
-         hour,
-         minute,
-         second,
-         microsecond,
-         offset_sign,
-         offset_hour,
-         offset_minute
-       ) do
-    local =
-      case offset_sign do
-        nil ->
-          datetime
+  defp calendar_components_round_trip?(components) do
+    local = local_datetime(components)
 
-        sign ->
-          offset_minutes = offset_hour * 60 + offset_minute
-          offset_minutes = if sign == "-", do: -offset_minutes, else: offset_minutes
-          DateTime.add(datetime, offset_minutes, :minute)
-      end
+    local.year == components.year and
+      local.month == components.month and
+      local.day == components.day and
+      local.hour == components.hour and
+      local.minute == components.minute and
+      local.second == components.second and
+      elem(local.microsecond, 0) == elem(components.microsecond, 0)
+  end
 
-    local.year == year and
-      local.month == month and
-      local.day == day and
-      local.hour == hour and
-      local.minute == minute and
-      local.second == second and
-      elem(local.microsecond, 0) == elem(microsecond, 0)
+  defp local_datetime(%{offset_sign: nil, datetime: datetime}), do: datetime
+
+  defp local_datetime(%{
+         datetime: datetime,
+         offset_sign: sign,
+         offset_hour: offset_hour,
+         offset_minute: offset_minute
+       }) do
+    offset_minutes = offset_hour * 60 + offset_minute
+    offset_minutes = if sign == "-", do: -offset_minutes, else: offset_minutes
+    DateTime.add(datetime, offset_minutes, :minute)
   end
 
   defp possible_positive_leap_second?(datetime) do

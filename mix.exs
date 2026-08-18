@@ -17,7 +17,10 @@ defmodule SecurityTxt.MixProject do
       source_url: @source_url,
       docs: docs(),
       test_ignore_filters: [&String.starts_with?(&1, "test/support/")],
-      test_coverage: [summary: [threshold: 100]],
+      test_coverage: [
+        summary: [threshold: 100],
+        ignore_modules: [Conformance]
+      ],
       dialyzer: [
         plt_add_apps: [:ex_unit, :mix],
         plt_local_path: "priv/plts/local.plt",

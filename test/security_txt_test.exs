@@ -36,6 +36,7 @@ defmodule SecurityTxtTest do
 
   test "parses a fully valid signed document with every convenience accessor" do
     expires = future_timestamp()
+
     content =
       signed(
         "Contact: mailto:security@example.com\n" <>
@@ -53,10 +54,12 @@ defmodule SecurityTxtTest do
     result = SecurityTxt.parse(content)
 
     assert result.valid
+
     assert result.contact == [
              "mailto:security@example.com",
              "https://example.com/report"
            ]
+
     assert result.expires == expires
     assert result.acknowledgments == ["https://example.com/thanks"]
     assert result.canonical == ["https://example.com/.well-known/security.txt"]
@@ -82,10 +85,12 @@ defmodule SecurityTxtTest do
 
     assert result.valid == false
     assert result.fields == []
+
     assert Enum.map(result.errors, &Map.take(&1, [:code, :line])) == [
              %{code: "no_contact", line: nil},
              %{code: "no_expires", line: nil}
            ]
+
     assert Enum.map(result.recommendations, & &1.code) == ["not_signed"]
   end
 
@@ -94,18 +99,18 @@ defmodule SecurityTxtTest do
 
     assert result.valid == false
     assert result.fields == []
+
     assert Enum.map(result.errors, &Map.take(&1, [:code, :line])) == [
              %{code: "no_contact", line: nil},
              %{code: "no_expires", line: nil}
            ]
+
     assert Enum.map(result.recommendations, & &1.code) == ["not_signed"]
   end
 
   test "reports missing and duplicate required fields in cardinality order" do
     result =
-      SecurityTxt.parse(
-        "Expires: #{future_timestamp()}\nExpires: #{future_timestamp(2)}\n"
-      )
+      SecurityTxt.parse("Expires: #{future_timestamp()}\nExpires: #{future_timestamp(2)}\n")
 
     assert Enum.map(result.errors, &Map.take(&1, [:code, :line])) == [
              %{code: "no_contact", line: nil},
@@ -132,9 +137,7 @@ defmodule SecurityTxtTest do
 
   test "reports expired timestamps as value errors" do
     result =
-      SecurityTxt.parse(
-        "Contact: https://example.com/report\nExpires: 2000-01-01T00:00:00Z\n"
-      )
+      SecurityTxt.parse("Contact: https://example.com/report\nExpires: 2000-01-01T00:00:00Z\n")
 
     assert Enum.map(result.errors, &Map.take(&1, [:code, :line])) == [
              %{code: "expired", line: 2}
@@ -148,11 +151,13 @@ defmodule SecurityTxtTest do
       )
 
     assert result.valid
+
     assert Enum.map(result.recommendations, & &1.code) == [
              "long_expiry",
              "no_encryption",
              "not_signed"
            ]
+
     assert [%{code: "unknown_field", line: 1}] =
              Enum.map(result.notifications, &Map.take(&1, [:code, :line]))
   end
@@ -167,6 +172,7 @@ defmodule SecurityTxtTest do
       )
 
     assert result.valid
+
     assert Enum.map(result.recommendations, &Map.take(&1, [:code, :line])) == [
              %{code: "long_expiry", line: 2},
              %{code: "no_encryption", line: nil},
@@ -178,9 +184,7 @@ defmodule SecurityTxtTest do
   test "recommends Canonical only for signed input" do
     result =
       SecurityTxt.parse(
-        signed(
-          "Contact: https://example.com/report\nExpires: #{future_timestamp()}"
-        )
+        signed("Contact: https://example.com/report\nExpires: #{future_timestamp()}")
       )
 
     assert Enum.map(result.recommendations, & &1.code) == ["no_canonical"]
@@ -197,6 +201,7 @@ defmodule SecurityTxtTest do
 
     assert result.valid
     assert Enum.map(result.fields, & &1.name) == ["X-First", "cOnTaCt", "eXpIrEs", "X-Second"]
+
     assert Enum.map(result.notifications, &Map.take(&1, [:code, :line])) == [
              %{code: "unknown_field", line: 1},
              %{code: "unknown_field", line: 4}
@@ -206,9 +211,7 @@ defmodule SecurityTxtTest do
   test "preserves physical line numbers through a signed envelope" do
     result =
       SecurityTxt.parse(
-        signed(
-          "# body\nContact: not-a-uri\nExpires: #{future_timestamp()}\nPolicy: relative"
-        )
+        signed("# body\nContact: not-a-uri\nExpires: #{future_timestamp()}\nPolicy: relative")
       )
 
     assert Enum.map(result.errors, &Map.take(&1, [:code, :line])) == [
@@ -227,6 +230,7 @@ defmodule SecurityTxtTest do
       )
 
     assert result.preferred_languages == ["en", "fr-CA", "i-klingon", "x-acme"]
+
     assert Enum.map(result.errors, &Map.take(&1, [:code, :line])) == [
              %{code: "multi_lang", line: 4}
            ]
@@ -262,9 +266,11 @@ defmodule SecurityTxtTest do
     assert result.expires == nil
     assert result.preferred_languages == []
     assert result.signed == false
+
     assert Enum.map(result.errors, &Map.take(&1, [:code, :line])) == [
              %{code: "file_too_large", line: nil}
            ]
+
     assert result.recommendations == []
     assert result.notifications == []
   end

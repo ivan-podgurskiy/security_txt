@@ -8,16 +8,16 @@ defmodule SecurityTxt.Validator do
   alias SecurityTxt.Uri
 
   @registered_names MapSet.new([
-                    "contact",
-                    "expires",
-                    "acknowledgments",
-                    "canonical",
-                    "csaf",
-                    "encryption",
-                    "hiring",
-                    "policy",
-                    "preferred-languages"
-                  ])
+                      "contact",
+                      "expires",
+                      "acknowledgments",
+                      "canonical",
+                      "csaf",
+                      "encryption",
+                      "hiring",
+                      "policy",
+                      "preferred-languages"
+                    ])
 
   @type validation_result :: %{
           errors: [Diagnostic.t()],
@@ -38,11 +38,12 @@ defmodule SecurityTxt.Validator do
     {value_errors, preferred_languages, long_expiry_recommendations} =
       validate_field_values(fields, now)
 
-    cardinality_errors = cardinality_errors(
-      contact_fields,
-      expires_fields,
-      language_fields
-    )
+    cardinality_errors =
+      cardinality_errors(
+        contact_fields,
+        expires_fields,
+        language_fields
+      )
 
     recommendations =
       long_expiry_recommendations ++
@@ -80,8 +81,7 @@ defmodule SecurityTxt.Validator do
               {errors ++ [Diagnostic.new(:expired, field.line)], languages, long_expiry}
 
             :long ->
-              {errors, languages,
-               long_expiry ++ [Diagnostic.new(:long_expiry, field.line)]}
+              {errors, languages, long_expiry ++ [Diagnostic.new(:long_expiry, field.line)]}
 
             :current ->
               {errors, languages, long_expiry}

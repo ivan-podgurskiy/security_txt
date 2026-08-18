@@ -35,7 +35,7 @@ defmodule SecurityTxt.PropertyTest do
   end
 
   defp bounded_arbitrary_string_generator do
-    gen all seed <- integer(0..0xFFFFFFFF) do
+    gen all(seed <- integer(0..0xFFFFFFFF)) do
       {length, state} = next_xorshift(seed)
       length = rem(length, 257)
 
@@ -44,7 +44,7 @@ defmodule SecurityTxt.PropertyTest do
           []
         else
           Enum.map(1..length, fn _ ->
-            {value, state} = next_xorshift(state)
+            {value, _state} = next_xorshift(state)
             Enum.at(@alphabet, rem(value, length(@alphabet)))
           end)
         end
@@ -139,7 +139,7 @@ defmodule SecurityTxt.PropertyTest do
           ]
         ]
 
-        {ack, state} = choose(ack_choices, state)
+        {ack, _state} = choose(ack_choices, state)
         Keyword.put(options, :acknowledgments, ack)
       else
         options
@@ -170,7 +170,7 @@ defmodule SecurityTxt.PropertyTest do
           ]
         ]
 
-        {csaf, state} = choose(csaf_choices, state)
+        {csaf, _state} = choose(csaf_choices, state)
         Keyword.put(options, :csaf, csaf)
       else
         options
@@ -186,7 +186,7 @@ defmodule SecurityTxt.PropertyTest do
           "openpgp4fpr:#{String.pad_leading(Integer.to_string(index, 16), 16, "0")}"
         ]
 
-        {encryption, state} = choose(enc_choices, state)
+        {encryption, _state} = choose(enc_choices, state)
         Keyword.put(options, :encryption, encryption)
       else
         options
@@ -225,7 +225,7 @@ defmodule SecurityTxt.PropertyTest do
         ]
 
         {languages, state} = choose(language_choices, state)
-        {lang_bit, state} = next_xorshift(state)
+        {lang_bit, _state} = next_xorshift(state)
 
         preferred_languages =
           if length(languages) == 1 and rem(lang_bit, 2) == 1 do
@@ -342,7 +342,7 @@ defmodule SecurityTxt.PropertyTest do
   end
 
   property "bounded arbitrary strings never crash the parser" do
-    check all input <- bounded_arbitrary_string_generator(), max_runs: 1_000 do
+    check all(input <- bounded_arbitrary_string_generator(), max_runs: 1_000) do
       assert %{} = SecurityTxt.parse(input)
     end
   end
@@ -353,7 +353,7 @@ defmodule SecurityTxt.PropertyTest do
       |> DateTime.add(30 * 86_400, :second)
       |> DateTime.to_iso8601()
 
-    check all index <- integer(0..499), max_runs: 500 do
+    check all(index <- integer(0..499), max_runs: 500) do
       {options, _state} = random_options(index, expires, index + 1)
 
       output = SecurityTxt.serialize(options)
@@ -383,7 +383,9 @@ defmodule SecurityTxt.PropertyTest do
       assert diagnostic_pairs(parsed.recommendations) == expected_recommendations(options, fields)
 
       comment_lines = Enum.map(comments, &"# #{&1}")
-      assert String.split(output, "\n", trim: false) |> Enum.take(length(comments)) == comment_lines
+
+      assert String.split(output, "\n", trim: false) |> Enum.take(length(comments)) ==
+               comment_lines
 
       case_randomized =
         SecurityTxt.parse(

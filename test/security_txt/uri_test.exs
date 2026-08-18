@@ -111,8 +111,13 @@ defmodule SecurityTxt.UriTest do
 
   test "uses one deterministic URI diagnostic per value" do
     assert %Diagnostic{code: "invalid_uri"} = Uri.validate("Contact", "security@example.com", 4)
-    assert %Diagnostic{code: "invalid_contact_scheme"} = Uri.validate("Contact", "http://example.com", 4)
-    assert %Diagnostic{code: "invalid_https_field"} = Uri.validate("Policy", "http://example.com/policy", 4)
+
+    assert %Diagnostic{code: "invalid_contact_scheme"} =
+             Uri.validate("Contact", "http://example.com", 4)
+
+    assert %Diagnostic{code: "invalid_https_field"} =
+             Uri.validate("Policy", "http://example.com/policy", 4)
+
     assert Uri.validate("CSAF", "https://example.com/provider-metadata.json", 4) == nil
   end
 end

@@ -54,6 +54,7 @@ defmodule SecurityTxt.ParserTest do
     ]
 
     assert {fields, []} = Parser.parse_lines(lines)
+
     assert Enum.map(fields, & &1.name) == [
              "Contact",
              "Expires",

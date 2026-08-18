@@ -70,8 +70,6 @@ defmodule SecurityTxt.Lines do
     |> then(fn {lines, errors} -> {Enum.reverse(lines), Enum.reverse(errors)} end)
   end
 
-  defp split_segments([], _number, _has_trailing_lf, lines, errors), do: {lines, errors}
-
   defp split_segments([segment], number, has_trailing_lf, lines, errors) do
     {text, cr_errors} = strip_crlf_ending(segment, number)
     line = %{number: number, text: text}

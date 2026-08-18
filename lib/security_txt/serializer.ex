@@ -150,16 +150,12 @@ defmodule SecurityTxt.Serializer do
   defp normalize_preferred_languages(nil), do: nil
 
   defp normalize_preferred_languages(value) do
-    case normalize_strings(value, "Preferred-Languages", false) do
-      nil ->
-        nil
+    languages = normalize_strings(value, "Preferred-Languages", false)
 
-      languages ->
-        if Enum.any?(languages, &(not LanguageTag.valid?(&1))) do
-          invalid_options("Preferred-Languages contains an invalid tag")
-        else
-          languages
-        end
+    if Enum.any?(languages, &(not LanguageTag.valid?(&1))) do
+      invalid_options("Preferred-Languages contains an invalid tag")
+    else
+      languages
     end
   end
 

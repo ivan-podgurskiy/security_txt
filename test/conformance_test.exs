@@ -38,6 +38,7 @@ defmodule ConformanceTest do
 
           expected_output ->
             assert {:ok, output} = result, "serialize failed for #{fixture_case["name"]}"
+
             assert output == expected_output,
                    "output mismatch for #{fixture_case["name"]}"
         end

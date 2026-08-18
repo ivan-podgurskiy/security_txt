@@ -27,13 +27,28 @@ defmodule SecurityTxt.Diagnostic do
   }
 
   @type code_atom ::
-          :no_contact | :no_expires | :multi_expires | :multi_lang |
-          :invalid_expires | :expired | :invalid_uri |
-          :invalid_contact_scheme | :invalid_https_field | :invalid_lang |
-          :invalid_line | :bom_present | :invalid_line_ending |
-          :file_too_large | :too_many_lines | :field_too_long |
-          :long_expiry | :no_encryption | :not_signed |
-          :no_canonical | :multi_csaf | :unknown_field
+          :no_contact
+          | :no_expires
+          | :multi_expires
+          | :multi_lang
+          | :invalid_expires
+          | :expired
+          | :invalid_uri
+          | :invalid_contact_scheme
+          | :invalid_https_field
+          | :invalid_lang
+          | :invalid_line
+          | :bom_present
+          | :invalid_line_ending
+          | :file_too_large
+          | :too_many_lines
+          | :field_too_long
+          | :long_expiry
+          | :no_encryption
+          | :not_signed
+          | :no_canonical
+          | :multi_csaf
+          | :unknown_field
 
   @type t :: %__MODULE__{
           code: String.t(),

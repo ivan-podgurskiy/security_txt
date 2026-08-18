@@ -7,16 +7,16 @@ defmodule SecurityTxt.Parser do
   @field_name ~r/^[\x21-\x39\x3b-\x7e]+:(.*)$/
 
   @registered_names MapSet.new([
-                     "contact",
-                     "expires",
-                     "acknowledgments",
-                     "canonical",
-                     "csaf",
-                     "encryption",
-                     "hiring",
-                     "policy",
-                     "preferred-languages"
-                   ])
+                      "contact",
+                      "expires",
+                      "acknowledgments",
+                      "canonical",
+                      "csaf",
+                      "encryption",
+                      "hiring",
+                      "policy",
+                      "preferred-languages"
+                    ])
 
   @spec parse_lines([%{number: pos_integer(), text: String.t()}]) ::
           {[Field.t()], [Diagnostic.t()]}
