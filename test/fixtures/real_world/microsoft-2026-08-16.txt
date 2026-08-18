@@ -1,0 +1,26 @@
+# Our security acknowledgements page
+Acknowledgments: https://msrc.microsoft.com/update-guide/acknowledgement
+
+# Canonical URI
+Canonical: https://www.microsoft.com/.well-known/security.txt
+
+# Our Researcher Portal
+Contact: https://msrc.microsoft.com/report/vulnerability/new
+
+# Our PGP Key
+Encryption: https://msrc.microsoft.com/.well-known/csaf/openpgp/998D7EC1A516E3D17FF90480EF148D3CDE714E0D.asc
+
+Expires: 2026-09-23T16:00:00.000Z
+# Our Bounty policy
+Policy: https://www.microsoft.com/en-us/msrc/bounty/
+
+# Our Coordinated Vulnerability Disclosure Policy
+Policy: https://www.microsoft.com/en-us/msrc/cvd
+
+# Our Bounty Legal Safe Harbor Policy
+Policy: https://www.microsoft.com/en-us/msrc/bounty-safe-harbor
+
+# Our Common Security Advisory Framework (CSAF) publications
+CSAF: https://msrc.microsoft.com/csaf/provider-metadata.json
+
+Preferred-Languages: en

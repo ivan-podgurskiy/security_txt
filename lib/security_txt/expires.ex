@@ -242,7 +242,7 @@ defmodule SecurityTxt.Expires do
       local.hour == hour and
       local.minute == minute and
       local.second == second and
-      local.microsecond == microsecond
+      elem(local.microsecond, 0) == elem(microsecond, 0)
   end
 
   defp possible_positive_leap_second?(datetime) do

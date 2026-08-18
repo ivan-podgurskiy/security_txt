@@ -9,6 +9,7 @@ defmodule SecurityTxt.MixProject do
       app: :security_txt,
       version: @version,
       elixir: "~> 1.14",
+      elixirc_paths: elixirc_paths(Mix.env()),
       deps: deps(),
       name: "SecurityTxt",
       description: "Parse, validate, and serialize RFC 9116 security.txt files in Elixir.",
@@ -24,6 +25,9 @@ defmodule SecurityTxt.MixProject do
       ]
     ]
   end
+
+  defp elixirc_paths(:test), do: ["lib", "test/support"]
+  defp elixirc_paths(_), do: ["lib"]
 
   defp deps do
     [

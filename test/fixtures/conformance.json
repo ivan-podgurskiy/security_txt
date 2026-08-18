@@ -1,0 +1,1153 @@
+{
+  "version": 1,
+  "parse": [
+    {
+      "name": "empty input reports required fields",
+      "input": "",
+      "expected": {
+        "valid": false,
+        "fields": [],
+        "contact": [],
+        "expires": null,
+        "signed": false,
+        "errors": [
+          { "code": "no_contact", "line": null },
+          { "code": "no_expires", "line": null }
+        ],
+        "recommendations": [{ "code": "not_signed", "line": null }],
+        "notifications": []
+      }
+    },
+    {
+      "name": "comments blank lines and whitespace-only lines are ignored",
+      "input": "# first\n\n \t \nContact: https://example.com/report\nExpires: {{within_one_year}}\n",
+      "expected": {
+        "valid": true,
+        "contact": ["https://example.com/report"],
+        "errors": [],
+        "recommendations": [{ "code": "not_signed", "line": null }],
+        "notifications": [],
+        "fields": [
+          {
+            "name": "Contact",
+            "value": "https://example.com/report",
+            "line": 4
+          },
+          { "name": "Expires", "value": "{{within_one_year}}", "line": 5 }
+        ]
+      }
+    },
+    {
+      "name": "all nine registered fields populate accessors",
+      "input": "Contact: https://example.com/report\nExpires: {{within_one_year}}\nAcknowledgments: https://example.com/thanks\nCanonical: https://example.com/.well-known/security.txt\nCSAF: https://example.com/csaf/provider-metadata.json\nEncryption: dns:key.example.com\nHiring: https://example.com/jobs\nPolicy: https://example.com/policy\nPreferred-Languages: en, fr-CA\n",
+      "expected": {
+        "valid": true,
+        "contact": ["https://example.com/report"],
+        "expires": "{{within_one_year}}",
+        "acknowledgments": ["https://example.com/thanks"],
+        "canonical": ["https://example.com/.well-known/security.txt"],
+        "csaf": ["https://example.com/csaf/provider-metadata.json"],
+        "encryption": ["dns:key.example.com"],
+        "hiring": ["https://example.com/jobs"],
+        "policy": ["https://example.com/policy"],
+        "preferredLanguages": ["en", "fr-CA"],
+        "signed": false,
+        "fields": [
+          {
+            "name": "Contact",
+            "value": "https://example.com/report",
+            "line": 1
+          },
+          { "name": "Expires", "value": "{{within_one_year}}", "line": 2 },
+          {
+            "name": "Acknowledgments",
+            "value": "https://example.com/thanks",
+            "line": 3
+          },
+          {
+            "name": "Canonical",
+            "value": "https://example.com/.well-known/security.txt",
+            "line": 4
+          },
+          {
+            "name": "CSAF",
+            "value": "https://example.com/csaf/provider-metadata.json",
+            "line": 5
+          },
+          {
+            "name": "Encryption",
+            "value": "dns:key.example.com",
+            "line": 6
+          },
+          {
+            "name": "Hiring",
+            "value": "https://example.com/jobs",
+            "line": 7
+          },
+          {
+            "name": "Policy",
+            "value": "https://example.com/policy",
+            "line": 8
+          },
+          {
+            "name": "Preferred-Languages",
+            "value": "en, fr-CA",
+            "line": 9
+          }
+        ],
+        "errors": [],
+        "recommendations": [{ "code": "not_signed", "line": null }],
+        "notifications": []
+      }
+    },
+    {
+      "name": "field names are case insensitive and source spelling is preserved",
+      "input": "cOnTaCt: https://example.com/report\neXpIrEs: {{within_one_year}}\npReFeRrEd-LaNgUaGeS: EN-us, i-KLINGON\n",
+      "expected": {
+        "valid": true,
+        "contact": ["https://example.com/report"],
+        "expires": "{{within_one_year}}",
+        "preferredLanguages": ["EN-us", "i-KLINGON"],
+        "fields": [
+          {
+            "name": "cOnTaCt",
+            "value": "https://example.com/report",
+            "line": 1
+          },
+          { "name": "eXpIrEs", "value": "{{within_one_year}}", "line": 2 },
+          {
+            "name": "pReFeRrEd-LaNgUaGeS",
+            "value": "EN-us, i-KLINGON",
+            "line": 3
+          }
+        ],
+        "errors": [],
+        "recommendations": [{ "code": "not_signed", "line": null }],
+        "notifications": []
+      }
+    },
+    {
+      "name": "multiple contacts preserve priority order",
+      "input": "Contact: mailto:first@example.com\nContact: tel:+1-201-555-0123\nContact: https://example.com/report\nExpires: {{within_one_year}}\nEncryption: openpgp4fpr:0123456789ABCDEF\n",
+      "expected": {
+        "valid": true,
+        "contact": [
+          "mailto:first@example.com",
+          "tel:+1-201-555-0123",
+          "https://example.com/report"
+        ],
+        "errors": [],
+        "recommendations": [{ "code": "not_signed", "line": null }],
+        "notifications": []
+      }
+    },
+    {
+      "name": "unknown extension fields remain and notify in source order",
+      "input": "X-First: one\nContact: https://example.com/report\nExpires: {{within_one_year}}\nFuture-Field: two\n",
+      "expected": {
+        "valid": true,
+        "contact": ["https://example.com/report"],
+        "expires": "{{within_one_year}}",
+        "signed": false,
+        "fields": [
+          { "name": "X-First", "value": "one", "line": 1 },
+          {
+            "name": "Contact",
+            "value": "https://example.com/report",
+            "line": 2
+          },
+          { "name": "Expires", "value": "{{within_one_year}}", "line": 3 },
+          { "name": "Future-Field", "value": "two", "line": 4 }
+        ],
+        "errors": [],
+        "recommendations": [{ "code": "not_signed", "line": null }],
+        "notifications": [
+          { "code": "unknown_field", "line": 1 },
+          { "code": "unknown_field", "line": 4 }
+        ]
+      }
+    },
+    {
+      "name": "hash inside a field value is not an inline comment",
+      "input": "Contact: https://example.com/report#form\nExpires: {{within_one_year}}\nPolicy: https://example.com/policy#scope\n",
+      "expected": {
+        "valid": true,
+        "contact": ["https://example.com/report#form"],
+        "policy": ["https://example.com/policy#scope"],
+        "errors": [],
+        "recommendations": [{ "code": "not_signed", "line": null }],
+        "notifications": []
+      }
+    },
+    {
+      "name": "invalid field syntax is reported on physical lines",
+      "input": "Contact https://example.com/report\nBad Name: value\nExpires: \n",
+      "expected": {
+        "valid": false,
+        "errors": [
+          { "code": "invalid_line", "line": 1 },
+          { "code": "invalid_line", "line": 2 },
+          { "code": "invalid_line", "line": 3 },
+          { "code": "no_contact", "line": null },
+          { "code": "no_expires", "line": null }
+        ],
+        "recommendations": [{ "code": "not_signed", "line": null }],
+        "notifications": []
+      }
+    },
+    {
+      "name": "missing contact",
+      "input": "Expires: {{within_one_year}}\n",
+      "expected": {
+        "valid": false,
+        "errors": [{ "code": "no_contact", "line": null }],
+        "recommendations": [{ "code": "not_signed", "line": null }],
+        "notifications": []
+      }
+    },
+    {
+      "name": "missing expires",
+      "input": "Contact: https://example.com/report\n",
+      "expected": {
+        "valid": false,
+        "errors": [{ "code": "no_expires", "line": null }],
+        "recommendations": [{ "code": "not_signed", "line": null }],
+        "notifications": []
+      }
+    },
+    {
+      "name": "duplicate expires points to second occurrence",
+      "input": "Contact: https://example.com/report\nExpires: {{within_one_year}}\nExpires: {{within_one_year}}\n",
+      "expected": {
+        "valid": false,
+        "expires": "{{within_one_year}}",
+        "errors": [{ "code": "multi_expires", "line": 3 }],
+        "recommendations": [{ "code": "not_signed", "line": null }],
+        "notifications": []
+      }
+    },
+    {
+      "name": "duplicate preferred languages points to second occurrence",
+      "input": "Contact: https://example.com/report\nExpires: {{within_one_year}}\nPreferred-Languages: en\npreferred-languages: fr-CA\n",
+      "expected": {
+        "valid": false,
+        "preferredLanguages": ["en", "fr-CA"],
+        "errors": [{ "code": "multi_lang", "line": 4 }],
+        "recommendations": [{ "code": "not_signed", "line": null }],
+        "notifications": []
+      }
+    },
+    {
+      "name": "invalid impossible and incomplete expiry values",
+      "input": "Contact: https://example.com/report\nExpires: 2027-02-29T00:00:00Z\nExpires: 2028-01-01 00:00:00Z\nExpires: 2028-01-01T00:00:00\n",
+      "expected": {
+        "valid": false,
+        "errors": [
+          { "code": "invalid_expires", "line": 2 },
+          { "code": "invalid_expires", "line": 3 },
+          { "code": "invalid_expires", "line": 4 },
+          { "code": "multi_expires", "line": 3 }
+        ],
+        "recommendations": [{ "code": "not_signed", "line": null }],
+        "notifications": []
+      }
+    },
+    {
+      "name": "past expiry is an error",
+      "input": "Contact: https://example.com/report\nExpires: {{past}}\n",
+      "expected": {
+        "valid": false,
+        "errors": [{ "code": "expired", "line": 2 }],
+        "recommendations": [{ "code": "not_signed", "line": null }],
+        "notifications": []
+      }
+    },
+    {
+      "name": "beyond one year expiry is a recommendation",
+      "input": "Contact: https://example.com/report\nExpires: {{beyond_one_year}}\n",
+      "expected": {
+        "valid": true,
+        "errors": [],
+        "recommendations": [
+          { "code": "long_expiry", "line": 2 },
+          { "code": "not_signed", "line": null }
+        ],
+        "notifications": []
+      }
+    },
+    {
+      "name": "valid URI schemes for contact and encryption",
+      "input": "Contact: mailto:security%2Btriage@example.com\nContact: tel:+1-201-555-0123\nContact: HTTPS://example.com/report\nExpires: {{within_one_year}}\nEncryption: https://example.com/key.asc\nEncryption: dns:key.example.com?type=OPENPGPKEY\nEncryption: openpgp4fpr:0123456789ABCDEF\n",
+      "expected": {
+        "valid": true,
+        "contact": [
+          "mailto:security%2Btriage@example.com",
+          "tel:+1-201-555-0123",
+          "HTTPS://example.com/report"
+        ],
+        "expires": "{{within_one_year}}",
+        "encryption": [
+          "https://example.com/key.asc",
+          "dns:key.example.com?type=OPENPGPKEY",
+          "openpgp4fpr:0123456789ABCDEF"
+        ],
+        "signed": false,
+        "errors": [],
+        "recommendations": [{ "code": "not_signed", "line": null }],
+        "notifications": []
+      }
+    },
+    {
+      "name": "malformed URIs precede scheme checks",
+      "input": "Contact: security@example.com\nContact: mailto:a\\b@example.com\nContact: mailto:#fragment\nExpires: {{within_one_year}}\nPolicy: https:///policy\nCSAF: https://:443/provider-metadata.json\n",
+      "expected": {
+        "valid": false,
+        "errors": [
+          { "code": "invalid_uri", "line": 1 },
+          { "code": "invalid_uri", "line": 2 },
+          { "code": "invalid_uri", "line": 3 },
+          { "code": "invalid_uri", "line": 5 },
+          { "code": "invalid_uri", "line": 6 }
+        ],
+        "recommendations": [
+          { "code": "no_encryption", "line": null },
+          { "code": "not_signed", "line": null }
+        ],
+        "notifications": []
+      }
+    },
+    {
+      "name": "disallowed contact and HTTPS-only field schemes",
+      "input": "Contact: http://example.com/report\nExpires: {{within_one_year}}\nAcknowledgments: http://example.com/thanks\nCanonical: ftp://example.com/security.txt\nCSAF: http://example.com/provider-metadata.json\nHiring: ftp://example.com/jobs\nPolicy: http://example.com/policy\nEncryption: ftp://example.com/key\n",
+      "expected": {
+        "valid": false,
+        "errors": [
+          { "code": "invalid_contact_scheme", "line": 1 },
+          { "code": "invalid_https_field", "line": 3 },
+          { "code": "invalid_https_field", "line": 4 },
+          { "code": "invalid_https_field", "line": 5 },
+          { "code": "invalid_https_field", "line": 6 },
+          { "code": "invalid_https_field", "line": 7 },
+          { "code": "invalid_https_field", "line": 8 }
+        ],
+        "recommendations": [{ "code": "not_signed", "line": null }],
+        "notifications": []
+      }
+    },
+    {
+      "name": "RFC 5646 grammar classes preserve casing and order",
+      "input": "Contact: https://example.com/report\nExpires: {{within_one_year}}\nPreferred-Languages: en, en-US, zh-Hant, de-CH-1901, sl-rozaj-biske, x-private, en-x-acme, i-klingon, sgn-BE-FR, zh-cmn-Hans-CN, en-a-abc-b-def\n",
+      "expected": {
+        "valid": true,
+        "preferredLanguages": [
+          "en",
+          "en-US",
+          "zh-Hant",
+          "de-CH-1901",
+          "sl-rozaj-biske",
+          "x-private",
+          "en-x-acme",
+          "i-klingon",
+          "sgn-BE-FR",
+          "zh-cmn-Hans-CN",
+          "en-a-abc-b-def"
+        ],
+        "errors": [],
+        "recommendations": [{ "code": "not_signed", "line": null }],
+        "notifications": []
+      }
+    },
+    {
+      "name": "invalid language tag syntax",
+      "input": "Contact: https://example.com/report\nExpires: {{within_one_year}}\nPreferred-Languages: en_US\n",
+      "expected": {
+        "valid": false,
+        "preferredLanguages": [],
+        "errors": [{ "code": "invalid_lang", "line": 3 }],
+        "recommendations": [{ "code": "not_signed", "line": null }],
+        "notifications": []
+      }
+    },
+    {
+      "name": "empty language list member is invalid",
+      "input": "Contact: https://example.com/report\nExpires: {{within_one_year}}\nPreferred-Languages: en, , fr\n",
+      "expected": {
+        "valid": false,
+        "preferredLanguages": [],
+        "errors": [{ "code": "invalid_lang", "line": 3 }],
+        "recommendations": [{ "code": "not_signed", "line": null }],
+        "notifications": []
+      }
+    },
+    {
+      "name": "dangling and duplicate RFC 5646 singletons are invalid",
+      "input": "Contact: https://example.com/report\nExpires: {{within_one_year}}\nPreferred-Languages: en-a, en-a-abc-A-def\n",
+      "expected": {
+        "valid": false,
+        "preferredLanguages": [],
+        "errors": [{ "code": "invalid_lang", "line": 3 }],
+        "recommendations": [{ "code": "not_signed", "line": null }],
+        "notifications": []
+      }
+    },
+    {
+      "name": "leading BOM is diagnosed then removed",
+      "input": "﻿Contact: https://example.com/report\nExpires: {{within_one_year}}\n",
+      "expected": {
+        "valid": false,
+        "contact": ["https://example.com/report"],
+        "errors": [{ "code": "bom_present", "line": 1 }],
+        "recommendations": [{ "code": "not_signed", "line": null }],
+        "notifications": []
+      }
+    },
+    {
+      "name": "non-empty final line requires LF",
+      "input": "Contact: https://example.com/report\nExpires: {{within_one_year}}",
+      "expected": {
+        "valid": false,
+        "errors": [{ "code": "invalid_line_ending", "line": 2 }],
+        "recommendations": [{ "code": "not_signed", "line": null }],
+        "notifications": []
+      }
+    },
+    {
+      "name": "bare CR separator is invalid",
+      "input": "Contact: https://example.com/report\rExpires: {{within_one_year}}\n",
+      "expected": {
+        "valid": false,
+        "errors": [
+          { "code": "invalid_line_ending", "line": 1 },
+          { "code": "invalid_uri", "line": 1 },
+          { "code": "no_expires", "line": null }
+        ],
+        "recommendations": [{ "code": "not_signed", "line": null }],
+        "notifications": []
+      }
+    },
+    {
+      "name": "RFC erratum 7743 LF line endings are accepted",
+      "input": "Contact: https://example.com/report\nExpires: {{within_one_year}}\n",
+      "expected": {
+        "valid": true,
+        "errors": [],
+        "recommendations": [{ "code": "not_signed", "line": null }],
+        "notifications": []
+      }
+    },
+    {
+      "name": "RFC erratum 7743 CRLF and mixed line endings are accepted",
+      "input": "Contact: https://example.com/report\r\nExpires: {{within_one_year}}\nCanonical: https://example.com/.well-known/security.txt\r\n",
+      "expected": {
+        "valid": true,
+        "errors": [],
+        "recommendations": [{ "code": "not_signed", "line": null }],
+        "notifications": []
+      }
+    },
+    {
+      "name": "input exactly at 32768 UTF-8 bytes is scanned",
+      "input": {
+        "parts": [{ "repeat": "#", "count": 32767 }, { "text": "\n" }]
+      },
+      "expected": {
+        "valid": false,
+        "fields": [],
+        "errors": [
+          { "code": "no_contact", "line": null },
+          { "code": "no_expires", "line": null }
+        ],
+        "recommendations": [{ "code": "not_signed", "line": null }],
+        "notifications": []
+      }
+    },
+    {
+      "name": "input above 32768 UTF-8 bytes is rejected before parsing",
+      "input": { "parts": [{ "repeat": "a", "count": 32769 }] },
+      "expected": {
+        "valid": false,
+        "fields": [],
+        "contact": [],
+        "expires": null,
+        "signed": false,
+        "errors": [{ "code": "file_too_large", "line": null }],
+        "recommendations": [],
+        "notifications": []
+      }
+    },
+    {
+      "name": "UTF-8 byte limit counts multi-byte characters",
+      "input": {
+        "parts": [{ "repeat": "é", "count": 16384 }, { "text": "\n" }]
+      },
+      "expected": {
+        "valid": false,
+        "fields": [],
+        "errors": [{ "code": "file_too_large", "line": null }],
+        "recommendations": [],
+        "notifications": []
+      }
+    },
+    {
+      "name": "exactly 1000 physical lines are accepted",
+      "input": {
+        "parts": [
+          { "repeat": "#\n", "count": 998 },
+          { "text": "Contact: https://example.com/report\n" },
+          { "text": "Expires: {{within_one_year}}\n" }
+        ]
+      },
+      "expected": {
+        "valid": true,
+        "fields": [
+          {
+            "name": "Contact",
+            "value": "https://example.com/report",
+            "line": 999
+          },
+          {
+            "name": "Expires",
+            "value": "{{within_one_year}}",
+            "line": 1000
+          }
+        ],
+        "errors": [],
+        "recommendations": [{ "code": "not_signed", "line": null }],
+        "notifications": []
+      }
+    },
+    {
+      "name": "more than 1000 physical lines is an error",
+      "input": {
+        "parts": [
+          { "repeat": "#\n", "count": 999 },
+          { "text": "Contact: https://example.com/report\n" },
+          { "text": "Expires: {{within_one_year}}\n" }
+        ]
+      },
+      "expected": {
+        "valid": false,
+        "errors": [{ "code": "too_many_lines", "line": null }],
+        "recommendations": [{ "code": "not_signed", "line": null }],
+        "notifications": []
+      }
+    },
+    {
+      "name": "registered field exactly 2048 Unicode characters is accepted",
+      "input": {
+        "parts": [
+          { "text": "Contact: https://example.com/report\n" },
+          { "text": "Expires: {{within_one_year}}\n" },
+          { "text": "Policy: https://example.com/" },
+          { "repeat": "x", "count": 2020 },
+          { "text": "\n" }
+        ]
+      },
+      "expected": {
+        "valid": true,
+        "errors": [],
+        "recommendations": [{ "code": "not_signed", "line": null }],
+        "notifications": []
+      }
+    },
+    {
+      "name": "registered field above 2048 Unicode characters is rejected",
+      "input": {
+        "parts": [
+          { "text": "Contact: https://example.com/report\n" },
+          { "text": "Expires: {{within_one_year}}\n" },
+          { "text": "Policy: https://example.com/" },
+          { "repeat": "x", "count": 2021 },
+          { "text": "\n" }
+        ]
+      },
+      "expected": {
+        "valid": false,
+        "policy": [],
+        "errors": [{ "code": "field_too_long", "line": 3 }],
+        "recommendations": [{ "code": "not_signed", "line": null }],
+        "notifications": []
+      }
+    },
+    {
+      "name": "complete OpenPGP envelope extracts cleartext and line numbers",
+      "input": "-----BEGIN PGP SIGNED MESSAGE-----\nHash: SHA256\n\n# body\nCanonical: https://example.com/.well-known/security.txt\nContact: https://example.com/report\nExpires: {{within_one_year}}\n-----BEGIN PGP SIGNATURE-----\nplaceholder\n-----END PGP SIGNATURE-----\n",
+      "expected": {
+        "valid": true,
+        "signed": true,
+        "contact": ["https://example.com/report"],
+        "fields": [
+          {
+            "name": "Canonical",
+            "value": "https://example.com/.well-known/security.txt",
+            "line": 5
+          },
+          {
+            "name": "Contact",
+            "value": "https://example.com/report",
+            "line": 6
+          },
+          { "name": "Expires", "value": "{{within_one_year}}", "line": 7 }
+        ],
+        "errors": [],
+        "recommendations": [],
+        "notifications": []
+      }
+    },
+    {
+      "name": "OpenPGP dash escaping is reversed before field parsing",
+      "input": "-----BEGIN PGP SIGNED MESSAGE-----\nHash: SHA256\n\n- Contact: https://example.com/report\n- Expires: {{within_one_year}}\n- Canonical: https://example.com/.well-known/security.txt\n-----BEGIN PGP SIGNATURE-----\nplaceholder\n-----END PGP SIGNATURE-----\n",
+      "expected": {
+        "valid": true,
+        "signed": true,
+        "contact": ["https://example.com/report"],
+        "expires": "{{within_one_year}}",
+        "canonical": ["https://example.com/.well-known/security.txt"],
+        "fields": [
+          {
+            "name": "Contact",
+            "value": "https://example.com/report",
+            "line": 4
+          },
+          { "name": "Expires", "value": "{{within_one_year}}", "line": 5 },
+          {
+            "name": "Canonical",
+            "value": "https://example.com/.well-known/security.txt",
+            "line": 6
+          }
+        ],
+        "errors": [],
+        "recommendations": [],
+        "notifications": []
+      }
+    },
+    {
+      "name": "malformed OpenPGP envelope without Hash header stays unsigned",
+      "input": "-----BEGIN PGP SIGNED MESSAGE-----\n\nContact: https://example.com/report\nExpires: {{within_one_year}}\n-----BEGIN PGP SIGNATURE-----\nplaceholder\n-----END PGP SIGNATURE-----\n",
+      "expected": {
+        "valid": false,
+        "signed": false,
+        "errors": [
+          { "code": "invalid_line", "line": 1 },
+          { "code": "invalid_line", "line": 5 },
+          { "code": "invalid_line", "line": 6 },
+          { "code": "invalid_line", "line": 7 }
+        ],
+        "recommendations": [{ "code": "not_signed", "line": null }],
+        "notifications": []
+      }
+    },
+    {
+      "name": "malformed OpenPGP envelope without signature end stays unsigned",
+      "input": "-----BEGIN PGP SIGNED MESSAGE-----\nHash: SHA256\n\nContact: https://example.com/report\nExpires: {{within_one_year}}\n-----BEGIN PGP SIGNATURE-----\nplaceholder\n",
+      "expected": {
+        "valid": false,
+        "signed": false,
+        "errors": [
+          { "code": "invalid_line", "line": 1 },
+          { "code": "invalid_line", "line": 6 },
+          { "code": "invalid_line", "line": 7 }
+        ],
+        "recommendations": [{ "code": "not_signed", "line": null }],
+        "notifications": [{ "code": "unknown_field", "line": 2 }]
+      }
+    },
+    {
+      "name": "signed file without canonical recommends canonical",
+      "input": "-----BEGIN PGP SIGNED MESSAGE-----\nHash: SHA256\n\nContact: https://example.com/report\nExpires: {{within_one_year}}\n-----BEGIN PGP SIGNATURE-----\nplaceholder\n-----END PGP SIGNATURE-----\n",
+      "expected": {
+        "valid": true,
+        "signed": true,
+        "errors": [],
+        "recommendations": [{ "code": "no_canonical", "line": null }],
+        "notifications": []
+      }
+    },
+    {
+      "name": "recommendations have stable order",
+      "input": "Contact: mailto:security@example.com\nExpires: {{beyond_one_year}}\nCSAF: https://example.com/one.json\nCSAF: https://example.com/two.json\n",
+      "expected": {
+        "valid": true,
+        "csaf": [
+          "https://example.com/one.json",
+          "https://example.com/two.json"
+        ],
+        "errors": [],
+        "recommendations": [
+          { "code": "long_expiry", "line": 2 },
+          { "code": "no_encryption", "line": null },
+          { "code": "not_signed", "line": null },
+          { "code": "multi_csaf", "line": 4 }
+        ],
+        "notifications": []
+      }
+    },
+    {
+      "name": "physical value and cardinality diagnostics have stable order",
+      "input": "﻿Policy: relative\nPreferred-Languages: en_US\nExpires: invalid\nExpires: invalid-again\n",
+      "expected": {
+        "valid": false,
+        "errors": [
+          { "code": "bom_present", "line": 1 },
+          { "code": "invalid_uri", "line": 1 },
+          { "code": "invalid_lang", "line": 2 },
+          { "code": "invalid_expires", "line": 3 },
+          { "code": "invalid_expires", "line": 4 },
+          { "code": "no_contact", "line": null },
+          { "code": "multi_expires", "line": 4 }
+        ],
+        "recommendations": [{ "code": "not_signed", "line": null }],
+        "notifications": []
+      }
+    },
+    {
+      "name": "RFC 9116 section 2.6 unsigned example",
+      "input": "# Our security address\nContact: mailto:security@example.com\n\n# Our OpenPGP key\nEncryption: https://example.com/pgp-key.txt\n# Our security policy\nPolicy: https://example.com/security-policy.html\n\n# Our security acknowledgments page\nAcknowledgments: https://example.com/hall-of-fame.html\n\nExpires: 2021-12-31T18:37:07z\n",
+      "expiresAt": "2021-12-31T18:37:07Z",
+      "expected": {
+        "valid": false,
+        "contact": ["mailto:security@example.com"],
+        "expires": "2021-12-31T18:37:07z",
+        "acknowledgments": ["https://example.com/hall-of-fame.html"],
+        "encryption": ["https://example.com/pgp-key.txt"],
+        "policy": ["https://example.com/security-policy.html"],
+        "signed": false,
+        "fields": [
+          {
+            "name": "Contact",
+            "value": "mailto:security@example.com",
+            "line": 2
+          },
+          {
+            "name": "Encryption",
+            "value": "https://example.com/pgp-key.txt",
+            "line": 5
+          },
+          {
+            "name": "Policy",
+            "value": "https://example.com/security-policy.html",
+            "line": 7
+          },
+          {
+            "name": "Acknowledgments",
+            "value": "https://example.com/hall-of-fame.html",
+            "line": 10
+          },
+          {
+            "name": "Expires",
+            "value": "2021-12-31T18:37:07z",
+            "line": 12
+          }
+        ],
+        "errors": [{ "code": "expired", "line": 12 }],
+        "recommendations": [{ "code": "not_signed", "line": null }],
+        "notifications": []
+      },
+      "expiryPhases": {
+        "beyondOneYear": {
+          "valid": true,
+          "errors": [],
+          "recommendations": [
+            { "code": "long_expiry", "line": 12 },
+            { "code": "not_signed", "line": null }
+          ],
+          "notifications": []
+        },
+        "withinOneYear": {
+          "valid": true,
+          "errors": [],
+          "recommendations": [{ "code": "not_signed", "line": null }],
+          "notifications": []
+        },
+        "afterExpiry": {
+          "valid": false,
+          "errors": [{ "code": "expired", "line": 12 }],
+          "recommendations": [{ "code": "not_signed", "line": null }],
+          "notifications": []
+        }
+      }
+    },
+    {
+      "name": "RFC 9116 section 2.7 signed example",
+      "input": "-----BEGIN PGP SIGNED MESSAGE-----\nHash: SHA256\n\n# Canonical URI\nCanonical: https://example.com/.well-known/security.txt\n\n# Our security address\nContact: mailto:security@example.com\n# Our OpenPGP key\nEncryption: https://example.com/pgp-key.txt\n\n# Our security policy\nPolicy: https://example.com/security-policy.html\n\n# Our security acknowledgments page\nAcknowledgments: https://example.com/hall-of-fame.html\n\nExpires: 2021-12-31T18:37:07z\n-----BEGIN PGP SIGNATURE-----\nVersion: GnuPG v2.2\n\nplaceholder\n-----END PGP SIGNATURE-----\n",
+      "expiresAt": "2021-12-31T18:37:07Z",
+      "expected": {
+        "valid": false,
+        "signed": true,
+        "contact": ["mailto:security@example.com"],
+        "expires": "2021-12-31T18:37:07z",
+        "acknowledgments": ["https://example.com/hall-of-fame.html"],
+        "canonical": ["https://example.com/.well-known/security.txt"],
+        "encryption": ["https://example.com/pgp-key.txt"],
+        "policy": ["https://example.com/security-policy.html"],
+        "fields": [
+          {
+            "name": "Canonical",
+            "value": "https://example.com/.well-known/security.txt",
+            "line": 5
+          },
+          {
+            "name": "Contact",
+            "value": "mailto:security@example.com",
+            "line": 8
+          },
+          {
+            "name": "Encryption",
+            "value": "https://example.com/pgp-key.txt",
+            "line": 10
+          },
+          {
+            "name": "Policy",
+            "value": "https://example.com/security-policy.html",
+            "line": 13
+          },
+          {
+            "name": "Acknowledgments",
+            "value": "https://example.com/hall-of-fame.html",
+            "line": 16
+          },
+          {
+            "name": "Expires",
+            "value": "2021-12-31T18:37:07z",
+            "line": 18
+          }
+        ],
+        "errors": [{ "code": "expired", "line": 18 }],
+        "recommendations": [],
+        "notifications": []
+      },
+      "expiryPhases": {
+        "beyondOneYear": {
+          "valid": true,
+          "errors": [],
+          "recommendations": [{ "code": "long_expiry", "line": 18 }],
+          "notifications": []
+        },
+        "withinOneYear": {
+          "valid": true,
+          "errors": [],
+          "recommendations": [],
+          "notifications": []
+        },
+        "afterExpiry": {
+          "valid": false,
+          "errors": [{ "code": "expired", "line": 18 }],
+          "recommendations": [],
+          "notifications": []
+        }
+      }
+    },
+    {
+      "name": "RFC erratum 6946 contact ordering points to section 2.5.3 behavior",
+      "input": "Contact: mailto:first@example.com\nContact: mailto:second@example.com\nExpires: {{within_one_year}}\nEncryption: https://example.com/key\n",
+      "expected": {
+        "valid": true,
+        "contact": ["mailto:first@example.com", "mailto:second@example.com"],
+        "errors": [],
+        "recommendations": [{ "code": "not_signed", "line": null }],
+        "notifications": []
+      }
+    },
+    {
+      "name": "RFC erratum 7264 lowercase z remains accepted for compatibility",
+      "input": "Contact: https://example.com/report\nExpires: {{beyond_one_year_lower_z}}\n",
+      "expected": {
+        "valid": true,
+        "contact": ["https://example.com/report"],
+        "expires": "{{beyond_one_year_lower_z}}",
+        "signed": false,
+        "errors": [],
+        "recommendations": [
+          { "code": "long_expiry", "line": 2 },
+          { "code": "not_signed", "line": null }
+        ],
+        "notifications": []
+      }
+    },
+    {
+      "name": "Google snapshot 2026-08-16",
+      "inputFile": "real-world/google-2026-08-16.txt",
+      "expiresAt": "2030-04-01T00:00:00Z",
+      "expected": {
+        "valid": true,
+        "contact": ["https://g.co/vulnz", "mailto:security@google.com"],
+        "expires": "2030-04-01T00:00:00z",
+        "acknowledgments": ["https://bughunters.google.com/"],
+        "encryption": ["https://services.google.com/corporate/publickey.txt"],
+        "hiring": ["https://g.co/SecurityPrivacyEngJobs"],
+        "policy": ["https://g.co/vrp"],
+        "signed": false,
+        "errors": [],
+        "recommendations": [
+          { "code": "long_expiry", "line": 7 },
+          { "code": "not_signed", "line": null }
+        ],
+        "notifications": []
+      },
+      "expiryPhases": {
+        "beyondOneYear": {
+          "valid": true,
+          "errors": [],
+          "recommendations": [
+            { "code": "long_expiry", "line": 7 },
+            { "code": "not_signed", "line": null }
+          ],
+          "notifications": []
+        },
+        "withinOneYear": {
+          "valid": true,
+          "errors": [],
+          "recommendations": [{ "code": "not_signed", "line": null }],
+          "notifications": []
+        },
+        "afterExpiry": {
+          "valid": false,
+          "errors": [{ "code": "expired", "line": 7 }],
+          "recommendations": [{ "code": "not_signed", "line": null }],
+          "notifications": []
+        }
+      }
+    },
+    {
+      "name": "GitHub snapshot 2026-08-16",
+      "inputFile": "real-world/github-2026-08-16.txt",
+      "expiresAt": "2026-09-15T11:20:25Z",
+      "expected": {
+        "valid": true,
+        "contact": ["https://hackerone.com/github"],
+        "expires": "2026-09-15T11:20:25z",
+        "acknowledgments": ["https://hackerone.com/github/hacktivity"],
+        "canonical": ["https://github.com/.well-known/security.txt"],
+        "hiring": ["https://github.careers"],
+        "policy": ["https://bounty.github.com"],
+        "preferredLanguages": ["en"],
+        "signed": false,
+        "errors": [],
+        "recommendations": [{ "code": "not_signed", "line": null }],
+        "notifications": []
+      },
+      "expiryPhases": {
+        "beyondOneYear": {
+          "valid": true,
+          "errors": [],
+          "recommendations": [
+            { "code": "long_expiry", "line": 7 },
+            { "code": "not_signed", "line": null }
+          ],
+          "notifications": []
+        },
+        "withinOneYear": {
+          "valid": true,
+          "errors": [],
+          "recommendations": [{ "code": "not_signed", "line": null }],
+          "notifications": []
+        },
+        "afterExpiry": {
+          "valid": false,
+          "errors": [{ "code": "expired", "line": 7 }],
+          "recommendations": [{ "code": "not_signed", "line": null }],
+          "notifications": []
+        }
+      }
+    },
+    {
+      "name": "Microsoft snapshot 2026-08-16",
+      "inputFile": "real-world/microsoft-2026-08-16.txt",
+      "expiresAt": "2026-09-23T16:00:00.000Z",
+      "expected": {
+        "valid": true,
+        "contact": ["https://msrc.microsoft.com/report/vulnerability/new"],
+        "expires": "2026-09-23T16:00:00.000Z",
+        "acknowledgments": [
+          "https://msrc.microsoft.com/update-guide/acknowledgement"
+        ],
+        "canonical": ["https://www.microsoft.com/.well-known/security.txt"],
+        "csaf": ["https://msrc.microsoft.com/csaf/provider-metadata.json"],
+        "encryption": [
+          "https://msrc.microsoft.com/.well-known/csaf/openpgp/998D7EC1A516E3D17FF90480EF148D3CDE714E0D.asc"
+        ],
+        "policy": [
+          "https://www.microsoft.com/en-us/msrc/bounty/",
+          "https://www.microsoft.com/en-us/msrc/cvd",
+          "https://www.microsoft.com/en-us/msrc/bounty-safe-harbor"
+        ],
+        "preferredLanguages": ["en"],
+        "signed": false,
+        "errors": [],
+        "recommendations": [{ "code": "not_signed", "line": null }],
+        "notifications": []
+      },
+      "expiryPhases": {
+        "beyondOneYear": {
+          "valid": true,
+          "errors": [],
+          "recommendations": [
+            { "code": "long_expiry", "line": 13 },
+            { "code": "not_signed", "line": null }
+          ],
+          "notifications": []
+        },
+        "withinOneYear": {
+          "valid": true,
+          "errors": [],
+          "recommendations": [{ "code": "not_signed", "line": null }],
+          "notifications": []
+        },
+        "afterExpiry": {
+          "valid": false,
+          "errors": [{ "code": "expired", "line": 13 }],
+          "recommendations": [{ "code": "not_signed", "line": null }],
+          "notifications": []
+        }
+      }
+    },
+    {
+      "name": "Dropbox snapshot 2026-08-16",
+      "inputFile": "real-world/dropbox-2026-08-16.txt",
+      "expected": {
+        "valid": false,
+        "contact": [],
+        "expires": null,
+        "hiring": ["https://www.dropbox.com/jobs/search?q=security"],
+        "errors": [
+          { "code": "invalid_line", "line": 3 },
+          { "code": "invalid_line", "line": 4 },
+          { "code": "invalid_line", "line": 5 },
+          { "code": "invalid_line", "line": 6 },
+          { "code": "no_contact", "line": null },
+          { "code": "no_expires", "line": null }
+        ],
+        "recommendations": [{ "code": "not_signed", "line": null }],
+        "notifications": []
+      }
+    }
+  ],
+  "serialize": [
+    {
+      "name": "all fields emit in canonical order",
+      "options": {
+        "comments": ["Security contact", "Managed by the security team"],
+        "contact": ["mailto:a@example.com", "https://example.com/report"],
+        "expires": "{{within_one_year}}",
+        "acknowledgments": [
+          "https://example.com/thanks/one",
+          "https://example.com/thanks/two"
+        ],
+        "canonical": "https://example.com/.well-known/security.txt",
+        "csaf": "https://example.com/csaf/provider-metadata.json",
+        "encryption": "openpgp4fpr:0123456789ABCDEF",
+        "hiring": "https://example.com/jobs",
+        "policy": "https://example.com/policy",
+        "preferredLanguages": ["en", "tr"]
+      },
+      "expected": "# Security contact\n# Managed by the security team\nContact: mailto:a@example.com\nContact: https://example.com/report\nExpires: {{within_one_year}}\nAcknowledgments: https://example.com/thanks/one\nAcknowledgments: https://example.com/thanks/two\nCanonical: https://example.com/.well-known/security.txt\nCSAF: https://example.com/csaf/provider-metadata.json\nEncryption: openpgp4fpr:0123456789ABCDEF\nHiring: https://example.com/jobs\nPolicy: https://example.com/policy\nPreferred-Languages: en, tr\n"
+    },
+    {
+      "name": "scalar and array inputs preserve order",
+      "options": {
+        "contact": ["tel:+1-201-555-0123", "https://example.com/report"],
+        "expires": "{{within_one_year}}",
+        "policy": ["https://example.com/first", "https://example.com/second"],
+        "preferredLanguages": "en-US"
+      },
+      "expected": "Contact: tel:+1-201-555-0123\nContact: https://example.com/report\nExpires: {{within_one_year}}\nPolicy: https://example.com/first\nPolicy: https://example.com/second\nPreferred-Languages: en-US\n"
+    },
+    {
+      "name": "invalid contact URI throws",
+      "options": {
+        "contact": "ftp://example.com/report",
+        "expires": "{{within_one_year}}"
+      },
+      "throws": true
+    },
+    {
+      "name": "invalid HTTPS-only field throws",
+      "options": {
+        "contact": "https://example.com/report",
+        "expires": "{{within_one_year}}",
+        "csaf": "http://example.com/provider-metadata.json"
+      },
+      "throws": true
+    },
+    {
+      "name": "invalid language tag throws",
+      "options": {
+        "contact": "https://example.com/report",
+        "expires": "{{within_one_year}}",
+        "preferredLanguages": "en_US"
+      },
+      "throws": true
+    },
+    {
+      "name": "expired timestamp throws",
+      "options": {
+        "contact": "https://example.com/report",
+        "expires": "{{past}}"
+      },
+      "throws": true
+    },
+    {
+      "name": "comment line injection throws",
+      "options": {
+        "comments": ["safe\nContact: tel:injected"],
+        "contact": "https://example.com/report",
+        "expires": "{{within_one_year}}"
+      },
+      "throws": true
+    },
+    {
+      "name": "field line injection throws",
+      "options": {
+        "contact": "mailto:a@example.com\rExpires: injected",
+        "expires": "{{within_one_year}}"
+      },
+      "throws": true
+    },
+    {
+      "name": "missing required contact throws",
+      "options": { "expires": "{{within_one_year}}" },
+      "throws": true
+    },
+    {
+      "name": "empty optional array throws",
+      "options": {
+        "contact": "https://example.com/report",
+        "expires": "{{within_one_year}}",
+        "policy": []
+      },
+      "throws": true
+    },
+    {
+      "name": "serialized field above 2048 characters throws",
+      "options": {
+        "contact": "https://example.com/report",
+        "expires": "{{within_one_year}}",
+        "policy": {
+          "parts": [
+            { "text": "https://example.com/" },
+            { "repeat": "x", "count": 2100 }
+          ]
+        }
+      },
+      "throws": true
+    },
+    {
+      "name": "serialized output above 32768 bytes throws",
+      "options": {
+        "comments": [{ "parts": [{ "repeat": "x", "count": 32768 }] }],
+        "contact": "https://example.com/report",
+        "expires": "{{within_one_year}}"
+      },
+      "throws": true
+    },
+    {
+      "name": "serialized output above 1000 lines throws",
+      "options": {
+        "comments": { "repeatArray": "x", "count": 999 },
+        "contact": "https://example.com/report",
+        "expires": "{{within_one_year}}"
+      },
+      "throws": true
+    }
+  ]
+}

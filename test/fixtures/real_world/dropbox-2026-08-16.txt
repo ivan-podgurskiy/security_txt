@@ -1,0 +1,7 @@
+# Dropbox uses Intigriti for responsible disclosure.
+# Please report abusive content (including malware, spam, etc) to abuse@dropbox.com or https://dropbox.com/report_abuse.
+Bug Bounty Contact: bugbounty@dropbox.com
+Bug Bounty Program: https://app.intigriti.com/programs/dropbox/dropbox
+Bug Bounty Acknowledgements: https://app.intigriti.com/programs/dropbox/dropbox/leaderboard
+Vulnerability Disclosure Program: https://app.intigriti.com/programs/dropbox/dropbox-vdp
+Hiring: https://www.dropbox.com/jobs/search?q=security
