@@ -53,12 +53,12 @@ defmodule SecurityTxt.Diagnostic do
   @type t :: %__MODULE__{
           code: String.t(),
           message: String.t(),
-          line: non_neg_integer() | nil
+          line: pos_integer() | nil
         }
 
   defstruct [:code, :message, :line]
 
-  @spec new(code_atom(), non_neg_integer() | nil) :: t()
+  @spec new(code_atom(), pos_integer() | nil) :: t()
   def new(code_atom, line) when is_atom(code_atom) do
     code = Atom.to_string(code_atom)
     message = Map.fetch!(@messages, code_atom)
@@ -66,7 +66,7 @@ defmodule SecurityTxt.Diagnostic do
     %__MODULE__{code: code, message: message, line: line}
   end
 
-  @spec to_map(t()) :: %{code: String.t(), message: String.t(), line: non_neg_integer() | nil}
+  @spec to_map(t()) :: %{code: String.t(), message: String.t(), line: pos_integer() | nil}
   def to_map(%__MODULE__{code: code, message: message, line: line}) do
     %{code: code, message: message, line: line}
   end

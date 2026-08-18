@@ -122,7 +122,7 @@ defmodule SecurityTxt do
       )
   """
   @spec serialize(keyword()) :: String.t()
-  def serialize(options) when is_list(options) do
+  def serialize(options) do
     Serializer.serialize(options)
   end
 

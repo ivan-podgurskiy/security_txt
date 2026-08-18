@@ -25,6 +25,10 @@ updates:
       - dependencies
       - security
       - automated-pr
+    # Must stay compatible with Elixir ~> 1.14 (newer releases require 1.15+).
+    ignore:
+      - dependency-name: earmark_parser
+      - dependency-name: ex_doc
     groups:
       mix-minor-patch:
         patterns:

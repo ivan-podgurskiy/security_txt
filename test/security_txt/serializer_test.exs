@@ -211,7 +211,7 @@ defmodule SecurityTxt.SerializerTest do
 
     test "rejects non-keyword list options at the serializer layer" do
       assert_raise ArgumentError, ~r/options must be a keyword list/, fn ->
-        SecurityTxt.Serializer.serialize(%{})
+        SecurityTxt.serialize(%{})
       end
     end
 

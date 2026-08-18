@@ -43,10 +43,13 @@ defmodule SecurityTxt.PropertyTest do
         if length == 0 do
           []
         else
-          Enum.map(1..length, fn _ ->
-            {value, _state} = next_xorshift(state)
-            Enum.at(@alphabet, rem(value, length(@alphabet)))
-          end)
+          {chars, _state} =
+            Enum.map_reduce(1..length, state, fn _, current_state ->
+              {value, current_state} = next_xorshift(current_state)
+              {Enum.at(@alphabet, rem(value, length(@alphabet))), current_state}
+            end)
+
+          chars
         end
 
       Enum.join(chars)
