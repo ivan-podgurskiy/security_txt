@@ -52,7 +52,8 @@ defmodule SecurityTxt.MixProject do
     [
       main: "SecurityTxt",
       source_ref: "v#{@version}",
-      source_url: @source_url
+      source_url: @source_url,
+      extras: ["README.md", "CHANGELOG.md", "LICENSE", "THIRD_PARTY_NOTICES.md"]
     ]
   end
 end

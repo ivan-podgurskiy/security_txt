@@ -1,0 +1,34 @@
+version: 2
+
+updates:
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+    labels:
+      - dependencies
+      - security
+      - automated-pr
+    groups:
+      github-actions-minor-patch:
+        patterns:
+          - "*"
+        update-types:
+          - minor
+          - patch
+
+  - package-ecosystem: mix
+    directory: /
+    schedule:
+      interval: monthly
+    labels:
+      - dependencies
+      - security
+      - automated-pr
+    groups:
+      mix-minor-patch:
+        patterns:
+          - "*"
+        update-types:
+          - minor
+          - patch

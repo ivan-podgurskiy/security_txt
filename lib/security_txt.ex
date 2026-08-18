@@ -1,10 +1,55 @@
 defmodule SecurityTxt do
   @moduledoc """
-  Provides the public API for parsing, validating, and serializing RFC 9116
-  `security.txt` files.
+  Parse, validate, and serialize RFC 9116 `security.txt` files in Elixir.
 
-  The package has no runtime dependencies. Its public parsing and serialization
-  functions are introduced as the implementation is completed.
+  The package has no runtime dependencies. Parsing returns structured
+  diagnostics, convenience accessors for registered fields, and OpenPGP
+  cleartext detection. Serialization builds canonical unsigned documents from
+  validated keyword options.
+
+  ## Quick start
+
+      expires =
+        DateTime.utc_now()
+        |> DateTime.add(2 * 365 * 24 * 60 * 60, :second)
+        |> DateTime.to_iso8601()
+
+      result =
+        SecurityTxt.parse(\"\"\"
+        Contact: https://example.com/report
+        Expires: \#{expires}
+        Policy: https://example.com/security-policy
+        Preferred-Languages: en, tr
+        \"\"\")
+
+      result.valid
+      #=> true
+
+      result.contact
+      #=> ["https://example.com/report"]
+
+      Enum.map(result.recommendations, & &1.code)
+      #=> ["long_expiry", "not_signed"]
+
+  ## Serialize
+
+      expires =
+        DateTime.utc_now()
+        |> DateTime.add(2 * 365 * 24 * 60 * 60, :second)
+        |> DateTime.to_iso8601()
+
+      SecurityTxt.serialize(
+        comments: ["Security contact for example.com"],
+        contact: ["mailto:security@example.com", "https://example.com/report"],
+        expires: expires,
+        canonical: "https://example.com/.well-known/security.txt",
+        csaf: "https://example.com/.well-known/csaf/provider-metadata.json",
+        encryption: "openpgp4fpr:0123456789ABCDEF",
+        policy: "https://example.com/security-policy",
+        preferred_languages: ["en", "tr"]
+      )
+
+  See the [README](README.md) for the full API, diagnostic codes, and scope.
   """
 
   alias SecurityTxt.Diagnostic
@@ -48,11 +93,61 @@ defmodule SecurityTxt do
           required(:preferred_languages) => [String.t()]
         }
 
+  @doc """
+  Builds a validated unsigned `security.txt` document.
+
+  `:contact` and `:expires` are required. URI and language fields accept a
+  string or non-empty string list; `:comments` accepts a non-empty string list.
+  An `:expires` value may be a current RFC 3339 string or a `DateTime`.
+
+  The output uses LF line endings, canonical field order, and one trailing
+  newline. Invalid options raise `ArgumentError`.
+
+  ## Examples
+
+      expires =
+        DateTime.utc_now()
+        |> DateTime.add(2 * 365 * 24 * 60 * 60, :second)
+        |> DateTime.to_iso8601()
+
+      SecurityTxt.serialize(
+        comments: ["Security contact for example.com"],
+        contact: ["mailto:security@example.com", "https://example.com/report"],
+        expires: expires,
+        canonical: "https://example.com/.well-known/security.txt",
+        csaf: "https://example.com/.well-known/csaf/provider-metadata.json",
+        encryption: "openpgp4fpr:0123456789ABCDEF",
+        policy: "https://example.com/security-policy",
+        preferred_languages: ["en", "tr"]
+      )
+  """
   @spec serialize(keyword()) :: String.t()
   def serialize(options) when is_list(options) do
     Serializer.serialize(options)
   end
 
+  @doc """
+  Parses and validates a complete `security.txt` string.
+
+  Parsing malformed input does not raise. Input over 32,768 UTF-8 bytes is
+  rejected before fields are parsed. The result includes source-order fields,
+  convenience accessors, and diagnostics separated by severity.
+
+  ## Examples
+
+      expires =
+        DateTime.utc_now()
+        |> DateTime.add(2 * 365 * 24 * 60 * 60, :second)
+        |> DateTime.to_iso8601()
+
+      SecurityTxt.parse(\"\"\"
+      Contact: https://example.com/report
+      Expires: \#{expires}
+      Policy: https://example.com/security-policy
+      Preferred-Languages: en, tr
+      \"\"\")
+
+  """
   @spec parse(String.t()) :: result()
   def parse(content) when is_binary(content) do
     scanned = Lines.scan(content)
