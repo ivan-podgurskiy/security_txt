@@ -84,7 +84,7 @@ defmodule SecurityTxt.LanguageTag do
       end
 
     index =
-      case skip_variants(subtags, index, MapSet.new()) do
+      case skip_variants(subtags, index, []) do
         :duplicate -> :duplicate
         next_index -> next_index
       end
@@ -94,14 +94,14 @@ defmodule SecurityTxt.LanguageTag do
         false
 
       index ->
-        case skip_extensions(subtags, index, MapSet.new()) do
+        case skip_extensions(subtags, index, []) do
           :duplicate -> false
           _index -> true
         end
     end
   end
 
-  @spec skip_variants([String.t()], non_neg_integer(), MapSet.t(String.t())) ::
+  @spec skip_variants([String.t()], non_neg_integer(), [String.t()]) ::
           non_neg_integer() | :duplicate
   defp skip_variants(subtags, index, variants) do
     case Enum.at(subtags, index) do
@@ -109,10 +109,10 @@ defmodule SecurityTxt.LanguageTag do
         if Regex.match?(@variant, subtag) do
           variant = String.downcase(subtag, :ascii)
 
-          if MapSet.member?(variants, variant) do
+          if variant in variants do
             :duplicate
           else
-            skip_variants(subtags, index + 1, MapSet.put(variants, variant))
+            skip_variants(subtags, index + 1, [variant | variants])
           end
         else
           index
@@ -123,7 +123,7 @@ defmodule SecurityTxt.LanguageTag do
     end
   end
 
-  @spec skip_extensions([String.t()], non_neg_integer(), MapSet.t(String.t())) ::
+  @spec skip_extensions([String.t()], non_neg_integer(), [String.t()]) ::
           non_neg_integer() | :duplicate
   defp skip_extensions(subtags, index, singletons) do
     case Enum.at(subtags, index) do
@@ -131,12 +131,12 @@ defmodule SecurityTxt.LanguageTag do
         if Regex.match?(@singleton, subtag) do
           singleton = String.downcase(subtag, :ascii)
 
-          if MapSet.member?(singletons, singleton) do
+          if singleton in singletons do
             :duplicate
           else
             index = index + 1
             index = skip_extension_subtags(subtags, index)
-            skip_extensions(subtags, index, MapSet.put(singletons, singleton))
+            skip_extensions(subtags, index, [singleton | singletons])
           end
         else
           index
