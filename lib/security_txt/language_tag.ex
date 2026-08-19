@@ -101,6 +101,8 @@ defmodule SecurityTxt.LanguageTag do
     end
   end
 
+  @spec skip_variants([String.t()], non_neg_integer(), MapSet.t(String.t())) ::
+          non_neg_integer() | :duplicate
   defp skip_variants(subtags, index, variants) do
     case Enum.at(subtags, index) do
       subtag when is_binary(subtag) ->
@@ -121,6 +123,8 @@ defmodule SecurityTxt.LanguageTag do
     end
   end
 
+  @spec skip_extensions([String.t()], non_neg_integer(), MapSet.t(String.t())) ::
+          non_neg_integer() | :duplicate
   defp skip_extensions(subtags, index, singletons) do
     case Enum.at(subtags, index) do
       subtag when is_binary(subtag) ->

@@ -22,7 +22,7 @@ defmodule SecurityTxt.MixProject do
         ignore_modules: [Conformance]
       ],
       dialyzer: [
-        plt_add_apps: [:ex_unit, :mix],
+        plt_add_apps: [:ex_unit, :mix, :jason],
         plt_local_path: "priv/plts/local.plt",
         plt_core_path: "priv/plts/core.plt"
       ]

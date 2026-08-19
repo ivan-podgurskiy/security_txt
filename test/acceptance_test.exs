@@ -45,17 +45,21 @@ defmodule AcceptanceTest do
         )
 
       assert content ==
-               """
-               # Security contact for example.com
-               Contact: mailto:security@example.com
-               Contact: https://example.com/report
-               Expires: #{expires}
-               Canonical: https://example.com/.well-known/security.txt
-               CSAF: https://example.com/.well-known/csaf/provider-metadata.json
-               Encryption: openpgp4fpr:0123456789ABCDEF
-               Policy: https://example.com/security-policy
-               Preferred-Languages: en, tr
-               """
+               Enum.join(
+                 [
+                   "# Security contact for example.com",
+                   "Contact: mailto:security@example.com",
+                   "Contact: https://example.com/report",
+                   "Expires: #{expires}",
+                   "Canonical: https://example.com/.well-known/security.txt",
+                   "CSAF: https://example.com/.well-known/csaf/provider-metadata.json",
+                   "Encryption: openpgp4fpr:0123456789ABCDEF",
+                   "Policy: https://example.com/security-policy",
+                   "Preferred-Languages: en, tr",
+                   ""
+                 ],
+                 "\n"
+               )
     end
   end
 end
