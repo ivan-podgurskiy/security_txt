@@ -160,8 +160,12 @@ defmodule Conformance do
     if expires_at && expiry_phases do
       expiry =
         case DateTime.from_iso8601(expires_at) do
-          {:ok, datetime, _} -> datetime
-          {:ok, datetime} -> datetime
+          {:ok, datetime, _offset} ->
+            datetime
+
+          {:error, reason} ->
+            raise ArgumentError,
+                  "invalid fixture expiresAt #{inspect(expires_at)}: #{inspect(reason)}"
         end
 
       phase =

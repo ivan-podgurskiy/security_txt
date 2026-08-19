@@ -26,9 +26,12 @@ updates:
       - security
       - automated-pr
     # Must stay compatible with Elixir ~> 1.14 (newer releases require 1.15+).
+    # Groups only batch minor/patch; ungrouped majors still open as separate PRs.
     ignore:
       - dependency-name: earmark_parser
       - dependency-name: ex_doc
+      - dependency-name: "*"
+        update-types: ["version-update:semver-major"]
     groups:
       mix-minor-patch:
         patterns:
